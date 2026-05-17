@@ -156,6 +156,15 @@ button {
   background: #fff;
 }
 
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .icon-button {
   width: 42px;
   height: 42px;
@@ -664,6 +673,16 @@ p {
   margin-left: auto;
 }
 
+.tool-button.danger {
+  color: #b84d3b;
+}
+
+.tool-button:disabled,
+.mood-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .journal-text {
   flex: 1;
   min-height: 330px;
@@ -684,6 +703,32 @@ p {
 .journal-text:focus {
   border-color: rgba(47, 111, 93, 0.55);
   box-shadow: 0 0 0 4px rgba(47, 111, 93, 0.1);
+}
+
+.attachment-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.attachment-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #40534c;
+  font-size: 12px;
+  background: #fff;
+}
+
+.attachment-pill.danger {
+  color: #b84d3b;
+  border-color: rgba(184, 77, 59, 0.22);
+  background: #fff5f2;
 }
 
 .editor-foot {
@@ -869,6 +914,11 @@ p {
   border: 0;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.mood-map button.empty {
+  color: var(--muted);
+  background: var(--surface-2);
 }
 
 .mood-map button.active {

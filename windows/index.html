@@ -45,7 +45,7 @@
             <div class="avatar">林</div>
             <div>
               <strong>林夏</strong>
-              <span>连续记录 18 天</span>
+              <span>连续记录 0 天</span>
             </div>
           </div>
 
@@ -107,8 +107,8 @@
               <section class="editor-panel">
                 <div class="editor-head">
                   <div>
-                    <span class="eyebrow" id="entryDate">今天 21:34</span>
-                    <h1 id="entryTitle">雨停以后</h1>
+                    <span class="eyebrow" id="entryDate">新建后开始记录</span>
+                    <h1 id="entryTitle">暂无日记</h1>
                   </div>
                   <div class="status-pill">
                     <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
@@ -117,9 +117,9 @@
                 </div>
 
                 <div class="meta-grid">
-                  <button class="meta-tile" type="button"><span>心情</span><strong id="entryMood">平静</strong></button>
-                  <button class="meta-tile" type="button"><span>天气</span><strong id="entryWeather">雨后多云</strong></button>
-                  <button class="meta-tile" type="button"><span>地点</span><strong id="entryPlace">回家路上</strong></button>
+                  <button class="meta-tile" type="button"><span>心情</span><strong id="entryMood">未填写</strong></button>
+                  <button class="meta-tile" type="button"><span>天气</span><strong id="entryWeather">未填写</strong></button>
+                  <button class="meta-tile" type="button"><span>地点</span><strong id="entryPlace">未填写</strong></button>
                 </div>
 
                 <div class="mood-picker" aria-label="选择心情">
@@ -133,10 +133,14 @@
                   <button class="tool-button" type="button" title="加粗">B</button>
                   <button class="tool-button italic" type="button" title="斜体">I</button>
                   <button class="tool-button" type="button" title="引用"><svg class="icon" aria-hidden="true"><use href="#icon-quote"></use></svg></button>
-                  <button class="tool-button" type="button" title="添加图片"><svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg></button>
-                  <button class="tool-button" type="button" title="语音"><svg class="icon" aria-hidden="true"><use href="#icon-mic"></use></svg></button>
+                  <button class="tool-button" type="button" title="上传图片"><svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg></button>
+                  <button class="tool-button" type="button" title="上传语音"><svg class="icon" aria-hidden="true"><use href="#icon-mic"></use></svg></button>
                   <button class="tool-button right" type="button" title="锁定"><svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg></button>
+                  <button id="deleteEntryButton" class="tool-button danger" type="button" title="删除日记"><svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg></button>
                 </div>
+                <input id="imageUploadInput" class="file-input" type="file" accept="image/*" multiple>
+                <input id="voiceUploadInput" class="file-input" type="file" accept="audio/*">
+                <div class="attachment-row" id="attachmentRow"></div>
 
                 <textarea id="journalText" class="journal-text" spellcheck="false"></textarea>
 
@@ -148,20 +152,20 @@
 
               <aside class="right-rail">
                 <section class="rail-section visual-section">
-                  <img src="../assets/illustrations/diary-desk.png" alt="雨后书桌和日记本">
+                  <img id="entryImagePreview" src="../assets/illustrations/diary-desk.png" alt="日记图片预览">
                   <div class="visual-copy">
-                    <span>今日照片</span>
-                    <strong>雨后、便利店灯光、阳台薄荷</strong>
+                    <span id="entryImageLabel">日记图片</span>
+                    <strong id="entryImageText">还没有上传图片</strong>
                   </div>
                 </section>
 
                 <section class="rail-section">
                   <div class="section-title"><h2>本月小结</h2></div>
                   <div class="stat-grid">
-                    <div><strong>18</strong><span>记录天数</span></div>
-                    <div><strong>9</strong><span>图片</span></div>
-                    <div><strong>4</strong><span>私密篇</span></div>
-                    <div><strong>7</strong><span>地点</span></div>
+                    <div><strong id="statEntries">0</strong><span>记录篇数</span></div>
+                    <div><strong id="statImages">0</strong><span>图片</span></div>
+                    <div><strong id="statPrivate">0</strong><span>私密篇</span></div>
+                    <div><strong id="statPlaces">0</strong><span>地点</span></div>
                   </div>
                 </section>
 
@@ -183,7 +187,7 @@
                 <span class="eyebrow">日历回顾</span>
                 <h1>五月记录</h1>
               </div>
-              <span class="soft-pill">18 / 31 天</span>
+                <span class="soft-pill" id="calendarSummary">0 / 31 天</span>
             </div>
 
             <div class="calendar-layout">
@@ -192,10 +196,10 @@
               </section>
               <section class="panel day-review" id="dayReview">
                 <img src="../assets/illustrations/diary-desk.png" alt="日记回顾插图">
-                <span>5月17日</span>
-                <h2>雨停以后</h2>
-                <p>散步、热牛奶、阳台薄荷。今天的记录偏平静，字数 123。</p>
-                <div class="tag-row"><span>#日常</span><span>#散步</span><span>#夜晚</span></div>
+                <span>暂无记录</span>
+                <h2>还没有日记</h2>
+                <p>新建一篇日记后，这里会显示当天回顾。</p>
+                <div class="tag-row"></div>
               </section>
             </div>
           </section>
@@ -206,7 +210,7 @@
                 <span class="eyebrow">情绪地图</span>
                 <h1>本月情绪分布</h1>
               </div>
-              <span class="soft-pill">平静最多</span>
+              <span class="soft-pill" id="moodSummaryPill">暂无情绪</span>
             </div>
 
             <div class="mood-layout">
@@ -216,7 +220,7 @@
               <section class="panel mood-summary">
                 <img src="../assets/illustrations/mobile-writing.png" alt="夜晚记录场景">
                 <h2>最近的情绪趋势</h2>
-                <p>平静和温暖占比更高，低落集中在工作日中段。可以把周三设为轻量记录日。</p>
+                <p id="moodSummaryText">写下日记并选择心情后，这里会汇总情绪分布。</p>
                 <div class="mood-bars">
                   <button class="mood-filter active" data-mood="calm" type="button"><span class="calm"></span>平静 46%</button>
                   <button class="mood-filter" data-mood="warm" type="button"><span class="warm"></span>温暖 23%</button>
@@ -233,7 +237,7 @@
                 <span class="eyebrow">私密匣</span>
                 <h1>加锁日记</h1>
               </div>
-              <span class="soft-pill">4 篇</span>
+              <span class="soft-pill" id="privateSummary">0 篇</span>
             </div>
 
             <div class="private-layout">
@@ -246,22 +250,8 @@
                 <button id="unlockButton" class="primary-button" type="button">解锁查看</button>
               </section>
 
-              <section class="panel private-list">
-                <article>
-                  <span>5月16日</span>
-                  <strong>给自己的低声话</strong>
-                  <button class="private-action" type="button">查看</button>
-                </article>
-                <article>
-                  <span>5月12日</span>
-                  <strong>不想公开的一天</strong>
-                  <button class="private-action" type="button">查看</button>
-                </article>
-                <article>
-                  <span>5月07日</span>
-                  <strong>迟到的决定</strong>
-                  <button class="private-action" type="button">查看</button>
-                </article>
+              <section class="panel private-list" id="privateList">
+                <div class="empty-list">还没有加锁日记</div>
               </section>
             </div>
           </section>
@@ -283,6 +273,7 @@
     <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></symbol>
     <symbol id="icon-mic" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"></path></symbol>
     <symbol id="icon-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 14H6L5 6"></path><path d="M10 11v5M14 11v5"></path></symbol>
   </svg>
 
   <script src="windows.js"></script>

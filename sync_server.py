@@ -1,6 +1,6 @@
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -12,74 +12,28 @@ STATE_PATH = DATA_DIR / "diary.json"
 
 DEFAULT_STATE = {
     "version": 1,
-    "activeEntryId": "entry-rain",
+    "activeEntryId": "",
     "updatedAt": 0,
-    "entries": [
-        {
-            "id": "entry-rain",
-            "title": "雨停以后",
-            "date": "今天 21:34",
-            "mood": "平静",
-            "moodClass": "calm",
-            "weather": "雨后多云",
-            "place": "回家路上",
-            "tags": ["日常", "散步", "夜晚"],
-            "text": "便利店门口的灯把雨水照得像一层薄玻璃。今天终于没有急着把一天过成清单。",
-            "note": "散步，热牛奶，薄荷。",
-            "image": "../assets/illustrations/diary-desk.png",
-            "updatedAt": 0,
-            "syncedAt": 0,
-            "locked": False,
-        },
-        {
-            "id": "entry-room",
-            "title": "把房间收亮一点",
-            "date": "昨天 23:06",
-            "mood": "开心",
-            "moodClass": "bright",
-            "weather": "晴",
-            "place": "卧室",
-            "tags": ["家", "整理"],
-            "text": "换了床单，把书桌左边空出来，心里也像被擦过一遍。",
-            "note": "整理书桌和床单。",
-            "image": "../assets/illustrations/mobile-writing.png",
-            "updatedAt": 0,
-            "syncedAt": 0,
-            "locked": False,
-        },
-        {
-            "id": "entry-future",
-            "title": "给未来的自己",
-            "date": "5月15日 22:18",
-            "mood": "温暖",
-            "moodClass": "warm",
-            "weather": "微风",
-            "place": "书桌前",
-            "tags": ["成长", "给自己"],
-            "text": "今天没有特别厉害，但没有逃走。这样也值得被认真记下来。",
-            "note": "没有逃走，也值得记录。",
-            "image": "../assets/illustrations/secure-sync.png",
-            "updatedAt": 0,
-            "syncedAt": 0,
-            "locked": True,
-        },
-    ],
+    "entries": [],
+    "deletedEntryIds": ["entry-rain", "entry-room", "entry-future"],
 }
 
 
 def read_state():
     if not STATE_PATH.exists():
-        return DEFAULT_STATE.copy()
+        return json.loads(json.dumps(DEFAULT_STATE))
 
     try:
         with STATE_PATH.open("r", encoding="utf-8") as file:
             state = json.load(file)
     except (OSError, json.JSONDecodeError):
-        return DEFAULT_STATE.copy()
+        return json.loads(json.dumps(DEFAULT_STATE))
 
     entries = state.get("entries")
     if not isinstance(entries, list):
-        state["entries"] = DEFAULT_STATE["entries"]
+        state["entries"] = []
+    if not isinstance(state.get("deletedEntryIds"), list):
+        state["deletedEntryIds"] = list(DEFAULT_STATE["deletedEntryIds"])
     state.setdefault("version", 1)
     state.setdefault("activeEntryId", state["entries"][0]["id"] if state["entries"] else "")
     state.setdefault("updatedAt", 0)
@@ -102,12 +56,42 @@ def entry_timestamp(entry):
         return 0
 
 
+def clean_attachment(item):
+    if not isinstance(item, dict):
+        return None
+    name = str(item.get("name") or "").strip()
+    data_url = str(item.get("dataUrl") or "").strip()
+    if not name and not data_url:
+        return None
+    return {
+        "name": name or "未命名文件",
+        "type": str(item.get("type") or ""),
+        "dataUrl": data_url,
+        "uploadedAt": entry_timestamp(item),
+    }
+
+
+def clean_attachment_list(value):
+    if not isinstance(value, list):
+        return []
+    return [
+        attachment
+        for attachment in (clean_attachment(item) for item in value)
+        if attachment
+    ]
+
+
 def clean_entry(entry):
+    if not isinstance(entry, dict):
+        return None
+
     entry_id = str(entry.get("id") or "").strip()
     if not entry_id:
         return None
 
     tags = entry.get("tags") if isinstance(entry.get("tags"), list) else []
+    images = clean_attachment_list(entry.get("images"))
+    voice = clean_attachment(entry.get("voice"))
     cleaned = {
         "id": entry_id,
         "title": str(entry.get("title") or "新的日记"),
@@ -119,7 +103,9 @@ def clean_entry(entry):
         "tags": [str(tag) for tag in tags],
         "text": str(entry.get("text") or ""),
         "note": str(entry.get("note") or ""),
-        "image": str(entry.get("image") or "../assets/illustrations/diary-desk.png"),
+        "image": str(entry.get("image") or ""),
+        "images": images,
+        "voice": voice,
         "updatedAt": entry_timestamp(entry),
         "syncedAt": entry_timestamp(entry) or 0,
         "locked": bool(entry.get("locked")),
@@ -127,18 +113,26 @@ def clean_entry(entry):
     return cleaned
 
 
+def deleted_ids(state):
+    raw_ids = state.get("deletedEntryIds") if isinstance(state, dict) else []
+    if not isinstance(raw_ids, list):
+        return set()
+    return {str(entry_id).strip() for entry_id in raw_ids if str(entry_id).strip()}
+
+
 def merge_state(payload):
     current = read_state()
+    removed_ids = deleted_ids(current) | deleted_ids(payload)
     current_entries = {
         entry["id"]: entry
         for entry in (clean_entry(item) for item in current.get("entries", []))
-        if entry
+        if entry and entry["id"] not in removed_ids
     }
 
     ordered_ids = []
     for item in payload.get("entries", []):
         entry = clean_entry(item)
-        if not entry:
+        if not entry or entry["id"] in removed_ids:
             continue
 
         current_entry = current_entries.get(entry["id"])
@@ -156,12 +150,15 @@ def merge_state(payload):
     active_entry_id = str(payload.get("activeEntryId") or current.get("activeEntryId") or "")
     if entries and active_entry_id not in current_entries:
         active_entry_id = entries[0]["id"]
+    if not entries:
+        active_entry_id = ""
 
     state = {
         "version": 1,
         "activeEntryId": active_entry_id,
         "updatedAt": max(entry_timestamp(payload), entry_timestamp(current)) + 1,
         "entries": entries,
+        "deletedEntryIds": sorted(removed_ids),
     }
     write_state(state)
     return state
