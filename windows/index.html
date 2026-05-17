@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>朝暮日记 Windows</title>
+  <link rel="icon" href="../assets/chaomu-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="windows.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-mark" src="../assets/chaomu-icon.svg" alt="朝暮日记 Logo">
+        <div>
+          <strong>朝暮日记</strong>
+          <span>Windows 桌面端</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <label class="search-box" aria-label="搜索">
+          <svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+          <input id="globalSearch" type="search" placeholder="搜索标题、正文、标签">
+        </label>
+        <button id="manualSyncButton" class="icon-button quiet" type="button" title="后台同步">
+          <svg class="icon" aria-hidden="true"><use href="#icon-cloud"></use></svg>
+        </button>
+        <a class="icon-button quiet link-button" href="../android/index.html" title="打开 Android 端">
+          <svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="window">
+      <div class="window-titlebar">
+        <div class="window-grip"><span></span><span></span><span></span></div>
+        <span class="window-title">朝暮日记 Windows</span>
+        <div class="window-actions" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="desktop-app">
+        <aside class="sidebar">
+          <div class="profile">
+            <div class="avatar">林</div>
+            <div>
+              <strong>林夏</strong>
+              <span>连续记录 18 天</span>
+            </div>
+          </div>
+
+          <nav class="side-nav" aria-label="日记分类">
+            <button class="side-nav-item active" data-view="write" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+              今日书写
+            </button>
+            <button class="side-nav-item" data-view="calendar" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-calendar"></use></svg>
+              日历回顾
+            </button>
+            <button class="side-nav-item" data-view="mood" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg>
+              情绪地图
+            </button>
+            <button class="side-nav-item" data-view="private" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+              私密匣
+            </button>
+          </nav>
+
+          <div class="sync-mini" id="sidebarSyncPanel">
+            <span class="sync-dot"></span>
+            <div>
+              <strong id="sidebarSyncTitle">预览已同步</strong>
+              <span id="sidebarSyncText">刚刚保存</span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="workspace">
+          <section id="writeView" class="workspace-view active" data-view="write">
+            <div class="write-grid">
+              <section class="entries-column">
+                <div class="column-head">
+                  <div>
+                    <span class="eyebrow">五月</span>
+                    <h2>最近日记</h2>
+                  </div>
+                  <button id="newEntryButton" class="icon-button compact" type="button" title="新建日记">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
+                  </button>
+                </div>
+
+                <div class="week-strip" aria-label="本周">
+                  <button class="day-cell" type="button"><span>一</span><strong>11</strong></button>
+                  <button class="day-cell" type="button"><span>二</span><strong>12</strong></button>
+                  <button class="day-cell" type="button"><span>三</span><strong>13</strong></button>
+                  <button class="day-cell" type="button"><span>四</span><strong>14</strong></button>
+                  <button class="day-cell" type="button"><span>五</span><strong>15</strong></button>
+                  <button class="day-cell" type="button"><span>六</span><strong>16</strong></button>
+                  <button class="day-cell active" type="button"><span>日</span><strong>17</strong></button>
+                </div>
+
+                <div class="entry-list" id="entryList"></div>
+              </section>
+
+              <section class="editor-panel">
+                <div class="editor-head">
+                  <div>
+                    <span class="eyebrow" id="entryDate">今天 21:34</span>
+                    <h1 id="entryTitle">雨停以后</h1>
+                  </div>
+                  <div class="status-pill">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+                    <span id="saveStatus">本地已保存</span>
+                  </div>
+                </div>
+
+                <div class="meta-grid">
+                  <button class="meta-tile" type="button"><span>心情</span><strong id="entryMood">平静</strong></button>
+                  <button class="meta-tile" type="button"><span>天气</span><strong id="entryWeather">雨后多云</strong></button>
+                  <button class="meta-tile" type="button"><span>地点</span><strong id="entryPlace">回家路上</strong></button>
+                </div>
+
+                <div class="mood-picker" aria-label="选择心情">
+                  <button class="mood-button calm active" data-mood="平静" type="button"><span></span>平静</button>
+                  <button class="mood-button bright" data-mood="开心" type="button"><span></span>开心</button>
+                  <button class="mood-button warm" data-mood="温暖" type="button"><span></span>温暖</button>
+                  <button class="mood-button low" data-mood="低落" type="button"><span></span>低落</button>
+                </div>
+
+                <div class="editor-toolbar" aria-label="编辑工具">
+                  <button class="tool-button" type="button" title="加粗">B</button>
+                  <button class="tool-button italic" type="button" title="斜体">I</button>
+                  <button class="tool-button" type="button" title="引用"><svg class="icon" aria-hidden="true"><use href="#icon-quote"></use></svg></button>
+                  <button class="tool-button" type="button" title="添加图片"><svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg></button>
+                  <button class="tool-button" type="button" title="语音"><svg class="icon" aria-hidden="true"><use href="#icon-mic"></use></svg></button>
+                  <button class="tool-button right" type="button" title="锁定"><svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg></button>
+                </div>
+
+                <textarea id="journalText" class="journal-text" spellcheck="false"></textarea>
+
+                <div class="editor-foot">
+                  <div class="tag-row" id="editorTags"></div>
+                  <span id="wordCount">0 字</span>
+                </div>
+              </section>
+
+              <aside class="right-rail">
+                <section class="rail-section visual-section">
+                  <img src="../assets/illustrations/diary-desk.png" alt="雨后书桌和日记本">
+                  <div class="visual-copy">
+                    <span>今日照片</span>
+                    <strong>雨后、便利店灯光、阳台薄荷</strong>
+                  </div>
+                </section>
+
+                <section class="rail-section">
+                  <div class="section-title"><h2>本月小结</h2></div>
+                  <div class="stat-grid">
+                    <div><strong>18</strong><span>记录天数</span></div>
+                    <div><strong>9</strong><span>图片</span></div>
+                    <div><strong>4</strong><span>私密篇</span></div>
+                    <div><strong>7</strong><span>地点</span></div>
+                  </div>
+                </section>
+
+                <section class="rail-section">
+                  <div class="section-title"><h2>灵感夹</h2></div>
+                  <div class="prompt-list">
+                    <button type="button">今天哪个瞬间让你慢下来？</button>
+                    <button type="button">最近反复想起的一句话</button>
+                    <button type="button">给明天留一个小约定</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <section id="calendarView" class="workspace-view page-view" data-view="calendar">
+            <div class="page-head">
+              <div>
+                <span class="eyebrow">日历回顾</span>
+                <h1>五月记录</h1>
+              </div>
+              <span class="soft-pill">18 / 31 天</span>
+            </div>
+
+            <div class="calendar-layout">
+              <section class="panel">
+                <div class="calendar-grid" id="calendarGrid"></div>
+              </section>
+              <section class="panel day-review" id="dayReview">
+                <img src="../assets/illustrations/diary-desk.png" alt="日记回顾插图">
+                <span>5月17日</span>
+                <h2>雨停以后</h2>
+                <p>散步、热牛奶、阳台薄荷。今天的记录偏平静，字数 123。</p>
+                <div class="tag-row"><span>#日常</span><span>#散步</span><span>#夜晚</span></div>
+              </section>
+            </div>
+          </section>
+
+          <section id="moodView" class="workspace-view page-view" data-view="mood">
+            <div class="page-head">
+              <div>
+                <span class="eyebrow">情绪地图</span>
+                <h1>本月情绪分布</h1>
+              </div>
+              <span class="soft-pill">平静最多</span>
+            </div>
+
+            <div class="mood-layout">
+              <section class="panel">
+                <div class="mood-map" id="moodMap"></div>
+              </section>
+              <section class="panel mood-summary">
+                <img src="../assets/illustrations/mobile-writing.png" alt="夜晚记录场景">
+                <h2>最近的情绪趋势</h2>
+                <p>平静和温暖占比更高，低落集中在工作日中段。可以把周三设为轻量记录日。</p>
+                <div class="mood-bars">
+                  <button class="mood-filter active" data-mood="calm" type="button"><span class="calm"></span>平静 46%</button>
+                  <button class="mood-filter" data-mood="warm" type="button"><span class="warm"></span>温暖 23%</button>
+                  <button class="mood-filter" data-mood="bright" type="button"><span class="bright"></span>开心 19%</button>
+                  <button class="mood-filter" data-mood="low" type="button"><span class="low"></span>低落 12%</button>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section id="privateView" class="workspace-view page-view" data-view="private">
+            <div class="page-head">
+              <div>
+                <span class="eyebrow">私密匣</span>
+                <h1>加锁日记</h1>
+              </div>
+              <span class="soft-pill">4 篇</span>
+            </div>
+
+            <div class="private-layout">
+              <section class="panel lock-panel">
+                <div class="lock-badge">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+                </div>
+                <h2>私密内容已锁定</h2>
+                <p>加锁的日记会在本机隐藏正文，云端只保存加密内容。</p>
+                <button id="unlockButton" class="primary-button" type="button">解锁查看</button>
+              </section>
+
+              <section class="panel private-list">
+                <article>
+                  <span>5月16日</span>
+                  <strong>给自己的低声话</strong>
+                  <button class="private-action" type="button">查看</button>
+                </article>
+                <article>
+                  <span>5月12日</span>
+                  <strong>不想公开的一天</strong>
+                  <button class="private-action" type="button">查看</button>
+                </article>
+                <article>
+                  <span>5月07日</span>
+                  <strong>迟到的决定</strong>
+                  <button class="private-action" type="button">查看</button>
+                </article>
+              </section>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <svg aria-hidden="true" class="svg-sprite">
+    <symbol id="icon-search" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3"></path><circle cx="11" cy="11" r="7"></circle></symbol>
+    <symbol id="icon-cloud" viewBox="0 0 24 24"><path d="M17.5 18H8a5 5 0 1 1 1.3-9.8A6.2 6.2 0 0 1 21 11a3.5 3.5 0 0 1-3.5 7Z"></path></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z"></path></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path></symbol>
+    <symbol id="icon-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"></path></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"></path></symbol>
+    <symbol id="icon-quote" viewBox="0 0 24 24"><path d="M9 7H5v6h4v4l3-4V7ZM19 7h-4v6h4v4l3-4V7Z"></path></symbol>
+    <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></symbol>
+    <symbol id="icon-mic" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"></path></symbol>
+    <symbol id="icon-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></symbol>
+  </svg>
+
+  <script src="windows.js"></script>
+</body>
+</html>

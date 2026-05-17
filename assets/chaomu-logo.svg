@@ -1,0 +1,24 @@
+<svg width="920" height="260" viewBox="0 0 920 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="16" width="228" height="228" rx="56" fill="url(#bg)"/>
+  <path d="M58 64C58 48.536 70.536 36 86 36H174C189.464 36 202 48.536 202 64V196C202 211.464 189.464 224 174 224H86C70.536 224 58 211.464 58 196V64Z" fill="#F9FFFC"/>
+  <path d="M78 86C78 75.507 86.507 67 97 67H164C174.493 67 183 75.507 183 86V187C183 197.493 174.493 206 164 206H97C86.507 206 78 197.493 78 187V86Z" fill="#E8F4EF"/>
+  <path d="M130 67V206" stroke="#CADDD3" stroke-width="7" stroke-linecap="round"/>
+  <path d="M92 98C106.6 90.1 119.9 91.7 130 99.5C140.1 91.7 153.4 90.1 168 98V190C153.4 182.1 140.1 183.7 130 191.5C119.9 183.7 106.6 182.1 92 190V98Z" fill="#FBFDFC"/>
+  <path d="M92 98C106.6 90.1 119.9 91.7 130 99.5V191.5C119.9 183.7 106.6 182.1 92 190V98Z" fill="#FFF7DF"/>
+  <path d="M130 99.5C140.1 91.7 153.4 90.1 168 98V190C153.4 182.1 140.1 183.7 130 191.5V99.5Z" fill="#EAF6FF"/>
+  <circle cx="109" cy="122" r="15" fill="#F4C84F"/>
+  <path d="M158 106C150.8 110.5 146 118.5 146 127.5C146 141.583 157.417 153 171.5 153C175.13 153 178.584 152.242 181.708 150.875C176.055 160.304 165.736 166.6 154 166.6C136.176 166.6 121.73 152.154 121.73 134.33C121.73 120.277 130.71 108.321 143.235 103.893C147.878 102.252 153.079 103.039 158 106Z" fill="#5479CC"/>
+  <path d="M105 161C114.93 161 123.367 167.513 126 176.5C128.633 167.513 137.07 161 147 161" stroke="#2F6F5D" stroke-width="10" stroke-linecap="round"/>
+  <path d="M105 161C114.93 161 123.367 167.513 126 176.5C128.633 167.513 137.07 161 147 161" stroke="#73B28E" stroke-width="4" stroke-linecap="round"/>
+  <text x="286" y="118" fill="#202724" font-size="66" font-weight="800" font-family="'Microsoft YaHei', 'Noto Sans CJK SC', 'PingFang SC', sans-serif">朝暮日记</text>
+  <text x="290" y="172" fill="#66736D" font-size="28" font-weight="500" font-family="'Microsoft YaHei', 'Noto Sans CJK SC', 'PingFang SC', sans-serif">把每天轻轻收进自己的时间里</text>
+  <path d="M290 202H578" stroke="#DCE6E1" stroke-width="8" stroke-linecap="round"/>
+  <path d="M290 202H430" stroke="#2F6F5D" stroke-width="8" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="46" y1="38" x2="220" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F6F5D"/>
+      <stop offset="0.48" stop-color="#3C8271"/>
+      <stop offset="1" stop-color="#263F52"/>
+    </linearGradient>
+  </defs>
+</svg>
