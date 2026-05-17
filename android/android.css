@@ -210,6 +210,7 @@ button {
 
 .mobile-tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -222,9 +223,23 @@ button {
   background: rgba(255, 255, 255, 0.14);
 }
 
+.mobile-tools button.danger {
+  border-color: rgba(255, 255, 255, 0.44);
+  color: #ffe7df;
+}
+
 .mobile-tools button.active {
   color: var(--green);
   background: #fff;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .tool-panel {
@@ -258,12 +273,26 @@ h2 {
   margin-top: 12px;
 }
 
+.photo-strip:has(.empty-photo) {
+  grid-template-columns: 1fr;
+}
+
 .photo-strip img {
   width: 100%;
   height: 118px;
   object-fit: cover;
   border: 1px solid var(--line);
   border-radius: 8px;
+  background: #fff;
+}
+
+.empty-photo,
+.empty-list {
+  min-height: 74px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
   background: #fff;
 }
 
@@ -375,9 +404,10 @@ h2 {
   margin-top: 12px;
 }
 
-.mobile-moods span {
+.mobile-moods button {
   display: block;
   aspect-ratio: 1;
+  border: 0;
   border-radius: 7px;
   opacity: 0.86;
 }

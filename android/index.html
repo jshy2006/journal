@@ -34,28 +34,31 @@
           <span class="mood-dot calm"></span>
           <span id="syncStatus">本地已保存 · 等待同步</span>
         </div>
-        <input id="mobileTitle" class="mobile-title" value="雨停以后" aria-label="日记标题">
-        <textarea id="mobileText" class="mobile-text" spellcheck="false">便利店门口的灯把雨水照得像一层薄玻璃。今天终于没有急着把一天过成清单。</textarea>
+        <input id="mobileTitle" class="mobile-title" value="" placeholder="新的日记" aria-label="日记标题">
+        <textarea id="mobileText" class="mobile-text" spellcheck="false" placeholder="写下今天。"></textarea>
         <div class="mobile-tools">
-          <button data-tool="photo" type="button">图片</button>
-          <button data-tool="voice" type="button">语音</button>
+          <button id="newMobileEntryButton" type="button">新建</button>
+          <button data-tool="photo" type="button">上传图片</button>
+          <button data-tool="voice" type="button">上传语音</button>
           <button data-tool="private" type="button">私密</button>
+          <button id="deleteMobileEntryButton" class="danger" type="button">删除</button>
         </div>
+        <input id="mobileImageUpload" class="file-input" type="file" accept="image/*" multiple>
+        <input id="mobileVoiceUpload" class="file-input" type="file" accept="audio/*">
       </div>
 
       <div id="toolPanel" class="tool-panel">
-        <strong>图片素材</strong>
-        <span>已添加 2 张今日照片，可继续补充。</span>
+        <strong>附件</strong>
+        <span>还没有上传图片或语音。</span>
       </div>
 
       <section class="mobile-section">
         <div class="section-title">
           <h2>今日照片</h2>
-          <span>2 张</span>
+          <span id="photoCount">0 张</span>
         </div>
-        <div class="photo-strip">
-          <img src="../assets/illustrations/diary-desk.png" alt="雨后书桌和日记本">
-          <img src="../assets/illustrations/secure-sync.png" alt="安全同步示意图">
+        <div class="photo-strip" id="photoStrip">
+          <div class="empty-photo">还没有上传图片</div>
         </div>
       </section>
     </section>
@@ -70,22 +73,8 @@
           <article class="active" data-entry="0">
             <time>今天</time>
             <div>
-              <strong>雨停以后</strong>
-              <p>散步，热牛奶，薄荷。</p>
-            </div>
-          </article>
-          <article data-entry="1">
-            <time>昨天</time>
-            <div>
-              <strong>把房间收亮一点</strong>
-              <p>整理书桌和床单。</p>
-            </div>
-          </article>
-          <article data-entry="2">
-            <time>周五</time>
-            <div>
-              <strong>给未来的自己</strong>
-              <p>没有逃走，也值得记录。</p>
+              <strong>暂无日记</strong>
+              <p>新建一篇后会出现在这里。</p>
             </div>
           </article>
         </div>
@@ -94,9 +83,9 @@
       <article class="reader-card" id="readerCard">
         <img src="../assets/illustrations/diary-desk.png" alt="日记插图">
         <div>
-          <span id="readerDate">今天 21:34</span>
-          <h2 id="readerTitle">雨停以后</h2>
-          <p id="readerText">便利店门口的灯把雨水照得像一层薄玻璃。今天终于没有急着把一天过成清单。</p>
+          <span id="readerDate">暂无记录</span>
+          <h2 id="readerTitle">还没有日记</h2>
+          <p id="readerText">新建一篇日记后，这里会显示正文。</p>
         </div>
       </article>
     </section>
@@ -115,14 +104,11 @@
           <h2>情绪</h2>
           <span>本周</span>
         </div>
-        <div class="mobile-moods">
-          <span class="calm"></span>
-          <span class="bright"></span>
-          <span class="warm"></span>
-          <span class="calm"></span>
-          <span class="low"></span>
-          <span class="bright"></span>
-          <span class="calm active"></span>
+        <div class="mobile-moods" id="mobileMoods">
+          <button class="calm active" data-mood="平静" data-class="calm" type="button" aria-label="平静"></button>
+          <button class="bright" data-mood="开心" data-class="bright" type="button" aria-label="开心"></button>
+          <button class="warm" data-mood="温暖" data-class="warm" type="button" aria-label="温暖"></button>
+          <button class="low" data-mood="低落" data-class="low" type="button" aria-label="低落"></button>
         </div>
       </section>
     </section>
@@ -131,9 +117,9 @@
       <section class="profile-card first-section">
         <img src="../assets/chaomu-logo.svg" alt="朝暮日记品牌">
         <div class="profile-stats">
-          <div><strong>18</strong><span>记录天数</span></div>
-          <div><strong>9</strong><span>图片</span></div>
-          <div><strong>4</strong><span>私密篇</span></div>
+          <div><strong id="profileEntryCount">0</strong><span>记录篇数</span></div>
+          <div><strong id="profileImageCount">0</strong><span>图片</span></div>
+          <div><strong id="profilePrivateCount">0</strong><span>私密篇</span></div>
         </div>
       </section>
 

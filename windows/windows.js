@@ -1,54 +1,12 @@
-const defaultEntries = [
-  {
-    id: "entry-rain",
-    title: "雨停以后",
-    date: "今天 21:34",
-    mood: "平静",
-    moodClass: "calm",
-    weather: "雨后多云",
-    place: "回家路上",
-    tags: ["日常", "散步", "夜晚"],
-    text: `下班路上风很轻，便利店门口的灯把雨水照得像一层薄玻璃。
-
-今天最想记住的是，自己终于没有急着把一天过成清单。慢慢走回家，听完一整首歌，买了一盒热牛奶。那些很小的安稳，好像也能把人接住。
-
-明天想早点起床，把阳台的薄荷修一下。`,
-    updatedAt: Date.now() - 1000 * 60 * 4,
-    syncedAt: Date.now() - 1000 * 60 * 4,
-    locked: false
-  },
-  {
-    id: "entry-room",
-    title: "把房间收亮一点",
-    date: "昨天 23:06",
-    mood: "开心",
-    moodClass: "bright",
-    weather: "晴",
-    place: "卧室",
-    tags: ["家", "整理"],
-    text: `换了床单，把书桌左边空出来，心里也像被擦过一遍。
-
-原来很多疲惫不是来自事情本身，而是所有东西都挤在一起。晚上打开台灯时，房间终于有了能呼吸的地方。`,
-    updatedAt: Date.now() - 1000 * 60 * 60 * 24,
-    syncedAt: Date.now() - 1000 * 60 * 60 * 24,
-    locked: false
-  },
-  {
-    id: "entry-future",
-    title: "给未来的自己",
-    date: "5月15日 22:18",
-    mood: "温暖",
-    moodClass: "warm",
-    weather: "微风",
-    place: "书桌前",
-    tags: ["成长", "给自己"],
-    text: `今天没有特别厉害，但没有逃走。这样也值得被认真记下来。
-
-希望以后的我看到这里，会记得这一天其实也很努力。`,
-    updatedAt: Date.now() - 1000 * 60 * 60 * 48,
-    syncedAt: Date.now() - 1000 * 60 * 60 * 48,
-    locked: true
-  }
+const SEEDED_ENTRY_IDS = new Set(["entry-rain", "entry-room", "entry-future"]);
+const SEEDED_ASSET_MARKER = "../assets/illustrations/";
+const SYNC_ENDPOINT = "/api/state";
+const POLL_INTERVAL = 1600;
+const MOODS = [
+  { name: "平静", className: "calm" },
+  { name: "开心", className: "bright" },
+  { name: "温暖", className: "warm" },
+  { name: "低落", className: "low" }
 ];
 
 const storage = {
@@ -69,19 +27,6 @@ const storage = {
     }
   }
 };
-
-const SYNC_ENDPOINT = "/api/state";
-const POLL_INTERVAL = 1600;
-
-let entries = normalizeEntries(storage.get("chaomu-windows-entries-v2", null) || storage.get("chaomu-windows-entries-v1", defaultEntries));
-
-let activeEntryId = storage.get("chaomu-windows-active-id", entries[0]?.id);
-let autoSyncEnabled = storage.get("chaomu-windows-auto-sync", true);
-let uploadTimer = 0;
-let saveTimer = 0;
-let searchQuery = "";
-let sharedUpdatedAt = 0;
-let isApplyingSharedState = false;
 
 const moodButtons = document.querySelectorAll(".mood-button");
 const dayCells = document.querySelectorAll(".day-cell");
@@ -107,26 +52,138 @@ const sidebarSyncPanel = document.querySelector("#sidebarSyncPanel");
 const sidebarSyncTitle = document.querySelector("#sidebarSyncTitle");
 const sidebarSyncText = document.querySelector("#sidebarSyncText");
 const calendarGrid = document.querySelector("#calendarGrid");
+const calendarSummary = document.querySelector("#calendarSummary");
 const dayReview = document.querySelector("#dayReview");
 const moodMap = document.querySelector("#moodMap");
 const moodFilters = document.querySelectorAll(".mood-filter");
+const moodSummaryPill = document.querySelector("#moodSummaryPill");
+const moodSummaryText = document.querySelector("#moodSummaryText");
 const unlockButton = document.querySelector("#unlockButton");
-const privateActions = document.querySelectorAll(".private-action");
+const privateList = document.querySelector("#privateList");
+const privateSummary = document.querySelector("#privateSummary");
+const imageUploadInput = document.querySelector("#imageUploadInput");
+const voiceUploadInput = document.querySelector("#voiceUploadInput");
+const attachmentRow = document.querySelector("#attachmentRow");
+const entryImagePreview = document.querySelector("#entryImagePreview");
+const entryImageLabel = document.querySelector("#entryImageLabel");
+const entryImageText = document.querySelector("#entryImageText");
+const statEntries = document.querySelector("#statEntries");
+const statImages = document.querySelector("#statImages");
+const statPrivate = document.querySelector("#statPrivate");
+const statPlaces = document.querySelector("#statPlaces");
 
-function getActiveEntry() {
-  return entries.find((entry) => entry.id === activeEntryId) || entries[0];
+let deletedEntryIds = new Set(storage.get("chaomu-shared-deleted-entry-ids-v1", []));
+SEEDED_ENTRY_IDS.forEach((id) => deletedEntryIds.add(id));
+
+let entries = normalizeEntries(
+  storage.get("chaomu-windows-entries-v2", null) ||
+  storage.get("chaomu-windows-entries-v1", [])
+);
+let activeEntryId = storage.get("chaomu-windows-active-id", entries[0]?.id || "");
+if (!entries.some((entry) => entry.id === activeEntryId)) {
+  activeEntryId = entries[0]?.id || "";
+}
+
+let autoSyncEnabled = storage.get("chaomu-windows-auto-sync", true);
+let sharedUpdatedAt = Number(storage.get("chaomu-shared-updated-at", 0));
+let uploadTimer = 0;
+let saveTimer = 0;
+let searchQuery = "";
+let isApplyingSharedState = false;
+
+function normalizeAttachment(item) {
+  if (!item || typeof item !== "object") return null;
+  const name = String(item.name || "").trim();
+  const dataUrl = String(item.dataUrl || "").trim();
+  if (!name && !dataUrl) return null;
+  return {
+    name: name || "未命名文件",
+    type: String(item.type || ""),
+    dataUrl,
+    uploadedAt: Number(item.uploadedAt || 0)
+  };
 }
 
 function normalizeEntries(items) {
-  const source = Array.isArray(items) && items.length ? items : defaultEntries;
-  return source.map((entry, index) => ({
-    ...defaultEntries[index % defaultEntries.length],
-    ...entry,
-    tags: Array.isArray(entry.tags) ? entry.tags : [],
-    updatedAt: Number(entry.updatedAt || 0),
-    syncedAt: Number(entry.syncedAt || 0),
-    locked: Boolean(entry.locked)
-  }));
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .filter((entry) => entry && entry.id && !deletedEntryIds.has(String(entry.id)) && !SEEDED_ENTRY_IDS.has(String(entry.id)))
+    .map((entry) => {
+      const images = Array.isArray(entry.images)
+        ? entry.images.map(normalizeAttachment).filter(Boolean)
+        : [];
+      const legacyImage = String(entry.image || "");
+      const safeImage = legacyImage.includes(SEEDED_ASSET_MARKER) ? "" : legacyImage;
+      if (!images.length && safeImage.startsWith("data:image")) {
+        images.push({
+          name: "已上传图片",
+          type: "image",
+          dataUrl: safeImage,
+          uploadedAt: Number(entry.updatedAt || 0)
+        });
+      }
+
+      return {
+        id: String(entry.id),
+        title: String(entry.title || "新的日记"),
+        date: String(entry.date || ""),
+        mood: String(entry.mood || "平静"),
+        moodClass: String(entry.moodClass || moodClassForName(entry.mood) || "calm"),
+        weather: String(entry.weather || "未填写"),
+        place: String(entry.place || "未填写"),
+        tags: Array.isArray(entry.tags) ? entry.tags.map(String) : [],
+        text: String(entry.text || ""),
+        note: String(entry.note || getNote(entry.text || "")),
+        image: images[0]?.dataUrl || safeImage,
+        images,
+        voice: normalizeAttachment(entry.voice),
+        updatedAt: Number(entry.updatedAt || 0),
+        syncedAt: Number(entry.syncedAt || 0),
+        locked: Boolean(entry.locked)
+      };
+    });
+}
+
+function moodClassForName(name) {
+  return MOODS.find((item) => item.name === name)?.className;
+}
+
+function getActiveEntry() {
+  return entries.find((entry) => entry.id === activeEntryId);
+}
+
+function getNote(text) {
+  return (text || "").split("\n").find((line) => line.trim())?.trim().slice(0, 28) || "还没有写下内容。";
+}
+
+function formatNowLabel() {
+  const now = new Date();
+  return `今天 ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function entryDateObject(entry) {
+  const value = Number(entry?.updatedAt || entry?.syncedAt || 0);
+  return value ? new Date(value) : new Date();
+}
+
+function formatTimeAgo(time) {
+  if (!time) return "尚未同步";
+  const diff = Math.max(0, Date.now() - time);
+  const minute = 1000 * 60;
+  if (diff < minute) return "刚刚保存";
+  if (diff < minute * 60) return `${Math.floor(diff / minute)} 分钟前`;
+  if (diff < minute * 60 * 24) return `${Math.floor(diff / (minute * 60))} 小时前`;
+  return `${Math.floor(diff / (minute * 60 * 24))} 天前`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function getSharedState() {
@@ -134,22 +191,34 @@ function getSharedState() {
     version: 1,
     activeEntryId,
     updatedAt: Date.now(),
-    entries
+    entries,
+    deletedEntryIds: Array.from(deletedEntryIds)
   };
+}
+
+function persistEntries(sync = true) {
+  storage.set("chaomu-windows-entries-v2", entries);
+  storage.set("chaomu-windows-active-id", activeEntryId);
+  storage.set("chaomu-shared-deleted-entry-ids-v1", Array.from(deletedEntryIds));
+  storage.set("chaomu-shared-updated-at", sharedUpdatedAt);
+  if (sync) scheduleSharedPush();
 }
 
 function applySharedState(state) {
   if (!state || !Array.isArray(state.entries)) return;
 
   isApplyingSharedState = true;
+  if (Array.isArray(state.deletedEntryIds)) {
+    state.deletedEntryIds.forEach((id) => deletedEntryIds.add(String(id)));
+  }
+  SEEDED_ENTRY_IDS.forEach((id) => deletedEntryIds.add(id));
   entries = normalizeEntries(state.entries);
   activeEntryId = entries.some((entry) => entry.id === state.activeEntryId)
     ? state.activeEntryId
-    : entries[0]?.id;
+    : entries[0]?.id || "";
   sharedUpdatedAt = Number(state.updatedAt || Date.now());
   persistEntries(false);
-  renderEntryList();
-  loadEntry(activeEntryId || entries[0]?.id);
+  refreshAll();
   isApplyingSharedState = false;
 }
 
@@ -183,6 +252,9 @@ async function pushSharedState() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const state = await response.json();
     sharedUpdatedAt = Number(state.updatedAt || Date.now());
+    if (Array.isArray(state.deletedEntryIds)) {
+      state.deletedEntryIds.forEach((id) => deletedEntryIds.add(String(id)));
+    }
     entries.forEach((entry) => {
       entry.syncedAt = Date.now();
     });
@@ -197,36 +269,6 @@ function scheduleSharedPush(delay = 500) {
   if (!autoSyncEnabled || isApplyingSharedState) return;
   window.clearTimeout(uploadTimer);
   uploadTimer = window.setTimeout(pushSharedState, delay);
-}
-
-function persistEntries(sync = true) {
-  storage.set("chaomu-windows-entries-v2", entries);
-  storage.set("chaomu-windows-active-id", activeEntryId);
-  if (sync) scheduleSharedPush();
-}
-
-function formatNowLabel() {
-  const now = new Date();
-  return `今天 ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-}
-
-function formatTimeAgo(time) {
-  if (!time) return "尚未同步";
-  const diff = Math.max(0, Date.now() - time);
-  const minute = 1000 * 60;
-  if (diff < minute) return "刚刚保存";
-  if (diff < minute * 60) return `${Math.floor(diff / minute)} 分钟前`;
-  if (diff < minute * 60 * 24) return `${Math.floor(diff / (minute * 60))} 小时前`;
-  return `${Math.floor(diff / (minute * 60 * 24))} 天前`;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function updateWordCount() {
@@ -264,7 +306,7 @@ function showDesktopFeedback(message) {
   saveStatus.textContent = message;
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
-    saveStatus.textContent = "本地已保存";
+    saveStatus.textContent = getActiveEntry() ? "本地已保存" : "等待新建";
   }, 1200);
 }
 
@@ -282,12 +324,12 @@ function renderEntryList() {
   });
 
   if (!visibleEntries.length) {
-    entryList.innerHTML = `<div class="empty-list">没有找到匹配的日记</div>`;
+    entryList.innerHTML = `<div class="empty-list">${entries.length ? "没有找到匹配的日记" : "还没有日记，点击右上角 + 新建。"}</div>`;
     return;
   }
 
   entryList.innerHTML = visibleEntries.map((entry) => {
-    const preview = entry.locked ? "这篇日记已加锁。" : (entry.text.split("\n").find(Boolean) || "还没有写下内容。");
+    const preview = entry.locked ? "这篇日记已加锁。" : getNote(entry.text);
     const tags = entry.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("");
     const activeClass = entry.id === activeEntryId ? " active" : "";
 
@@ -295,7 +337,7 @@ function renderEntryList() {
       <article class="entry-card${activeClass}" data-entry-id="${escapeHtml(entry.id)}" tabindex="0">
         <div class="entry-topline">
           <span class="mood-chip ${escapeHtml(entry.moodClass)}"></span>
-          <time>${escapeHtml(entry.date)}</time>
+          <time>${escapeHtml(entry.date || "未记录时间")}</time>
         </div>
         <h3>${escapeHtml(entry.title)}</h3>
         <p>${escapeHtml(preview)}</p>
@@ -318,26 +360,91 @@ function renderEntryList() {
 
 function syncMoodButtons(entry) {
   moodButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.mood === entry.mood);
+    button.classList.toggle("active", Boolean(entry) && button.dataset.mood === entry.mood);
   });
+}
+
+function setEditorControls(entry) {
+  const hasEntry = Boolean(entry);
+  textArea.disabled = !hasEntry || entry.locked;
+  moodButtons.forEach((button) => {
+    button.disabled = !hasEntry || entry.locked;
+  });
+  toolButtons.forEach((button) => {
+    button.disabled = !hasEntry || (entry.locked && button.title !== "删除日记");
+  });
+}
+
+function renderAttachments(entry) {
+  if (!entry) {
+    attachmentRow.innerHTML = "";
+    return;
+  }
+
+  const chips = [];
+  if (entry.images.length) {
+    chips.push(`<span class="attachment-pill">图片 ${entry.images.length} 张</span>`);
+  }
+  if (entry.voice) {
+    chips.push(`<span class="attachment-pill">语音 ${escapeHtml(entry.voice.name)}</span>`);
+  }
+  if (entry.locked) {
+    chips.push(`<span class="attachment-pill danger">已加锁</span>`);
+  }
+  attachmentRow.innerHTML = chips.join("");
+}
+
+function renderVisual(entry) {
+  const image = entry?.image || entry?.images?.[0]?.dataUrl || "../assets/illustrations/diary-desk.png";
+  entryImagePreview.src = image;
+  entryImagePreview.alt = entry?.title || "日记图片预览";
+  entryImageLabel.textContent = entry ? "日记图片" : "日记图片";
+  entryImageText.textContent = entry?.images?.length ? entry.images[0].name : "还没有上传图片";
+}
+
+function showEmptyEditor() {
+  activeEntryId = "";
+  title.textContent = "暂无日记";
+  date.textContent = "新建后开始记录";
+  mood.textContent = "未填写";
+  weather.textContent = "未填写";
+  place.textContent = "未填写";
+  textArea.value = "";
+  textArea.placeholder = "点击 + 新建一篇日记。";
+  editorTags.innerHTML = "";
+  syncMoodButtons(null);
+  updateWordCount();
+  saveStatus.textContent = "等待新建";
+  setEditorControls(null);
+  renderAttachments(null);
+  renderVisual(null);
+  persistEntries(false);
 }
 
 function loadEntry(id) {
   const entry = entries.find((item) => item.id === id);
-  if (!entry) return;
+  if (!entry) {
+    showEmptyEditor();
+    renderEntryList();
+    refreshSyncStatus();
+    return;
+  }
 
   activeEntryId = entry.id;
   title.textContent = entry.title;
-  date.textContent = entry.date;
+  date.textContent = entry.date || "未记录时间";
   mood.textContent = entry.mood;
   weather.textContent = entry.weather;
   place.textContent = entry.place;
   textArea.value = entry.locked ? "这篇日记已加锁。可在私密匣中解锁查看。" : entry.text;
-  textArea.disabled = entry.locked;
+  textArea.placeholder = "写下今天。";
   editorTags.innerHTML = entry.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("");
   syncMoodButtons(entry);
   updateWordCount();
   saveStatus.textContent = entry.locked ? "已加锁" : "本地已保存";
+  setEditorControls(entry);
+  renderAttachments(entry);
+  renderVisual(entry);
   persistEntries(false);
   renderEntryList();
   refreshSyncStatus();
@@ -351,6 +458,7 @@ function updateActiveEntry(patch) {
     updatedAt: Date.now(),
     date: formatNowLabel()
   });
+  entry.note = getNote(entry.text);
 
   if (entry.title === "新的日记") {
     const firstLine = entry.text.split("\n").find((line) => line.trim());
@@ -363,6 +471,10 @@ function updateActiveEntry(patch) {
   date.textContent = entry.date;
   persistEntries();
   renderEntryList();
+  renderCalendar();
+  renderMoodMap();
+  renderPrivateList();
+  refreshStats();
   refreshSyncStatus();
 }
 
@@ -377,7 +489,7 @@ function saveLocalDraft() {
 function insertAtCursor(snippet) {
   const entry = getActiveEntry();
   if (!entry || entry.locked) {
-    showDesktopFeedback("请先解锁");
+    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
     return;
   }
 
@@ -389,19 +501,98 @@ function insertAtCursor(snippet) {
   updateActiveEntry({ text: textArea.value });
   updateWordCount();
   saveLocalDraft();
-  scheduleCloudUpload();
-}
-
-function uploadToGoogleDrive() {
-  pushSharedState();
-}
-
-function scheduleCloudUpload() {
-  refreshSyncStatus();
-
-  if (!autoSyncEnabled || !navigator.onLine) return;
-
   scheduleSharedPush(700);
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      resolve({
+        name: file.name,
+        type: file.type,
+        dataUrl: String(reader.result || ""),
+        uploadedAt: Date.now()
+      });
+    });
+    reader.addEventListener("error", reject);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadImages(fileList) {
+  const entry = getActiveEntry();
+  if (!entry || entry.locked) {
+    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
+    return;
+  }
+
+  const files = Array.from(fileList || []).filter((file) => file.type.startsWith("image/"));
+  if (!files.length) return;
+
+  try {
+    const attachments = await Promise.all(files.map(readFileAsDataUrl));
+    const images = [...attachments, ...entry.images].slice(0, 8);
+    updateActiveEntry({ images, image: images[0]?.dataUrl || "" });
+    renderAttachments(entry);
+    renderVisual(entry);
+    showDesktopFeedback(`已上传 ${attachments.length} 张图片`);
+  } catch {
+    showDesktopFeedback("图片上传失败");
+  } finally {
+    imageUploadInput.value = "";
+  }
+}
+
+async function uploadVoice(fileList) {
+  const entry = getActiveEntry();
+  if (!entry || entry.locked) {
+    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
+    return;
+  }
+
+  const file = Array.from(fileList || []).find((item) => item.type.startsWith("audio/"));
+  if (!file) return;
+
+  try {
+    const voice = await readFileAsDataUrl(file);
+    updateActiveEntry({ voice });
+    renderAttachments(entry);
+    showDesktopFeedback("语音已上传");
+  } catch {
+    showDesktopFeedback("语音上传失败");
+  } finally {
+    voiceUploadInput.value = "";
+  }
+}
+
+function lockActiveEntry() {
+  const entry = getActiveEntry();
+  if (!entry) return;
+  entry.locked = true;
+  entry.updatedAt = Date.now();
+  persistEntries();
+  loadEntry(entry.id);
+  renderPrivateList();
+  refreshStats();
+}
+
+function deleteActiveEntry() {
+  const entry = getActiveEntry();
+  if (!entry) {
+    showDesktopFeedback("没有可删除的日记");
+    return;
+  }
+
+  const confirmed = window.confirm(`删除《${entry.title || "这篇日记"}》？此操作无法撤销。`);
+  if (!confirmed) return;
+
+  deletedEntryIds.add(entry.id);
+  entries = entries.filter((item) => item.id !== entry.id);
+  activeEntryId = entries[0]?.id || "";
+  persistEntries();
+  refreshAll();
+  showDesktopFeedback("日记已删除");
 }
 
 function createEntry() {
@@ -414,8 +605,12 @@ function createEntry() {
     moodClass: "calm",
     weather: "未填写",
     place: "未填写",
-    tags: ["新日记"],
+    tags: [],
     text: "",
+    note: "还没有写下内容。",
+    image: "",
+    images: [],
+    voice: null,
     updatedAt: now,
     syncedAt: 0,
     locked: false
@@ -425,41 +620,70 @@ function createEntry() {
   activeEntryId = entry.id;
   persistEntries();
   switchView("write");
-  renderEntryList();
-  loadEntry(entry.id);
+  refreshAll();
   textArea.focus();
-  scheduleCloudUpload();
+}
+
+function entriesByDay() {
+  const byDay = new Map();
+  entries.forEach((entry) => {
+    const day = entryDateObject(entry).getDate();
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(entry);
+  });
+  return byDay;
+}
+
+function renderDayReview(entry, day) {
+  dayReview.querySelector("span").textContent = `5月${day}日`;
+  dayReview.querySelector("h2").textContent = entry ? entry.title : "还没有日记";
+  dayReview.querySelector("p").textContent = entry
+    ? (entry.locked ? "这篇日记已加锁。" : getNote(entry.text))
+    : "这一天还没有记录，可以从今日书写补一篇。";
+  dayReview.querySelector("img").src = entry?.image || entry?.images?.[0]?.dataUrl || "../assets/illustrations/diary-desk.png";
+  dayReview.querySelector(".tag-row").innerHTML = entry?.tags?.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("") || "";
 }
 
 function renderCalendar() {
-  const marked = new Set([1, 2, 4, 7, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 24, 26, 28, 30]);
+  const byDay = entriesByDay();
+  const today = new Date().getDate();
   const week = ["一", "二", "三", "四", "五", "六", "日"];
 
+  calendarSummary.textContent = `${byDay.size} / 31 天`;
   calendarGrid.innerHTML = Array.from({ length: 31 }, (_, index) => {
     const day = index + 1;
-    const moodName = day % 5 === 0 ? "温暖" : day % 4 === 0 ? "开心" : day % 6 === 0 ? "低落" : "平静";
-    const classes = `${marked.has(day) ? "marked" : ""} ${day === 17 ? "active" : ""}`.trim();
-    return `<button class="${classes}" data-day="${day}" data-mood="${moodName}" type="button"><span>${week[index % 7]}</span><strong>${day}</strong><span>${marked.has(day) ? moodName : "未记录"}</span></button>`;
+    const dayEntries = byDay.get(day) || [];
+    const entry = dayEntries[0];
+    const classes = `${entry ? "marked" : ""} ${day === today ? "active" : ""}`.trim();
+    return `<button class="${classes}" data-day="${day}" type="button"><span>${week[index % 7]}</span><strong>${day}</strong><span>${entry ? escapeHtml(entry.mood) : "未记录"}</span></button>`;
   }).join("");
 
   calendarGrid.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
       calendarGrid.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
-      dayReview.querySelector("span").textContent = `5月${button.dataset.day}日`;
-      dayReview.querySelector("h2").textContent = button.dataset.day === "17" ? "雨停以后" : `${button.dataset.mood}的一天`;
-      dayReview.querySelector("p").textContent = button.classList.contains("marked")
-        ? `这一天的主要情绪是${button.dataset.mood}，已经收进五月回顾。`
-        : "这一天还没有记录，可以从今日书写补一篇。";
+      renderDayReview((byDay.get(Number(button.dataset.day)) || [])[0], Number(button.dataset.day));
     });
   });
+
+  renderDayReview((byDay.get(today) || entries)[0], today);
 }
 
 function renderMoodMap() {
-  const moodClasses = ["calm", "bright", "calm", "warm", "low", "calm", "bright", "warm", "calm", "bright", "calm", "warm", "calm", "low", "calm", "bright", "warm", "calm", "calm", "bright", "calm", "warm", "calm", "low", "bright", "calm", "warm", "calm", "bright", "calm", "warm"];
+  const byDay = entriesByDay();
+  const today = new Date().getDate();
+  const counts = MOODS.reduce((result, item) => ({ ...result, [item.className]: 0 }), {});
 
-  moodMap.innerHTML = moodClasses.map((moodClass, index) => {
-    return `<button class="${moodClass} ${index === 16 ? "active" : ""}" data-day="${index + 1}" type="button">${index + 1}</button>`;
+  entries.forEach((entry) => {
+    if (counts[entry.moodClass] !== undefined) counts[entry.moodClass] += 1;
+  });
+
+  moodMap.innerHTML = Array.from({ length: 31 }, (_, index) => {
+    const day = index + 1;
+    const entry = (byDay.get(day) || [])[0];
+    const moodClass = entry?.moodClass || "empty";
+    const activeClass = day === today ? " active" : "";
+    return `<button class="${moodClass}${activeClass}" data-day="${day}" type="button">${day}</button>`;
   }).join("");
 
   moodMap.querySelectorAll("button").forEach((button) => {
@@ -468,6 +692,70 @@ function renderMoodMap() {
       button.classList.add("active");
     });
   });
+
+  const total = entries.length || 1;
+  moodFilters.forEach((button) => {
+    const moodInfo = MOODS.find((item) => item.className === button.dataset.mood);
+    const percent = Math.round(((counts[button.dataset.mood] || 0) / total) * 100);
+    button.innerHTML = `<span class="${button.dataset.mood}"></span>${moodInfo?.name || "情绪"} ${entries.length ? `${percent}%` : "0%"}`;
+  });
+
+  const topMood = MOODS.reduce((best, item) => (counts[item.className] > counts[best.className] ? item : best), MOODS[0]);
+  moodSummaryPill.textContent = entries.length ? `${topMood.name}最多` : "暂无情绪";
+  moodSummaryText.textContent = entries.length
+    ? `已根据 ${entries.length} 篇日记整理情绪分布。`
+    : "写下日记并选择心情后，这里会汇总情绪分布。";
+}
+
+function renderPrivateList() {
+  const lockedEntries = entries.filter((entry) => entry.locked);
+  privateSummary.textContent = `${lockedEntries.length} 篇`;
+
+  if (!lockedEntries.length) {
+    privateList.innerHTML = `<div class="empty-list">还没有加锁日记</div>`;
+    return;
+  }
+
+  privateList.innerHTML = lockedEntries.map((entry) => `
+    <article>
+      <span>${escapeHtml(entry.date || "未记录时间")}</span>
+      <strong>${escapeHtml(entry.title)}</strong>
+      <button class="private-action" data-entry-id="${escapeHtml(entry.id)}" type="button">解锁</button>
+    </article>
+  `).join("");
+
+  privateList.querySelectorAll(".private-action").forEach((button) => {
+    button.addEventListener("click", () => {
+      const entry = entries.find((item) => item.id === button.dataset.entryId);
+      if (!entry) return;
+      entry.locked = false;
+      entry.updatedAt = Date.now();
+      activeEntryId = entry.id;
+      persistEntries();
+      switchView("write");
+      refreshAll();
+    });
+  });
+}
+
+function refreshStats() {
+  const imageCount = entries.reduce((total, entry) => total + entry.images.length, 0);
+  const lockedCount = entries.filter((entry) => entry.locked).length;
+  const places = new Set(entries.map((entry) => entry.place).filter((value) => value && value !== "未填写"));
+
+  statEntries.textContent = String(entries.length);
+  statImages.textContent = String(imageCount);
+  statPrivate.textContent = String(lockedCount);
+  statPlaces.textContent = String(places.size);
+}
+
+function refreshAll() {
+  renderEntryList();
+  loadEntry(activeEntryId || entries[0]?.id || "");
+  renderCalendar();
+  renderMoodMap();
+  renderPrivateList();
+  refreshStats();
 }
 
 moodButtons.forEach((button) => {
@@ -480,7 +768,6 @@ moodButtons.forEach((button) => {
     mood.textContent = button.dataset.mood;
     updateActiveEntry({ mood: button.dataset.mood, moodClass });
     saveLocalDraft();
-    scheduleCloudUpload();
   });
 });
 
@@ -503,15 +790,10 @@ toolButtons.forEach((button) => {
     if (action === "加粗") insertAtCursor("**重点**");
     if (action === "斜体") insertAtCursor("*感受*");
     if (action === "引用") insertAtCursor("\n> 今天想记住的一句话\n");
-    if (action === "添加图片") insertAtCursor("\n[图片：今日照片]\n");
-    if (action === "语音") insertAtCursor("\n[语音记录：00:15]\n");
-    if (action === "锁定") {
-      const entry = getActiveEntry();
-      if (!entry) return;
-      entry.locked = true;
-      persistEntries();
-      loadEntry(entry.id);
-    }
+    if (action === "上传图片") imageUploadInput.click();
+    if (action === "上传语音") voiceUploadInput.click();
+    if (action === "锁定") lockActiveEntry();
+    if (action === "删除日记") deleteActiveEntry();
   });
 });
 
@@ -522,7 +804,7 @@ promptButtons.forEach((button) => {
 metaTiles.forEach((button) => {
   button.addEventListener("click", () => {
     const label = button.querySelector("span")?.textContent || "信息";
-    showDesktopFeedback(`已打开${label}设置`);
+    showDesktopFeedback(getActiveEntry() ? `已打开${label}设置` : "请先新建日记");
   });
 });
 
@@ -530,32 +812,33 @@ moodFilters.forEach((button) => {
   button.addEventListener("click", () => {
     moodFilters.forEach((item) => item.classList.toggle("active", item === button));
     moodMap.querySelectorAll("button").forEach((item) => {
+      if (item.classList.contains("empty")) {
+        item.style.opacity = "0.35";
+        return;
+      }
       item.style.opacity = item.classList.contains(button.dataset.mood) ? "1" : "0.35";
     });
   });
 });
 
-privateActions.forEach((button) => {
-  button.addEventListener("click", () => {
-    button.textContent = button.textContent === "查看" ? "已隐藏" : "查看";
-  });
-});
-
 unlockButton.addEventListener("click", () => {
   const lockedEntry = entries.find((entry) => entry.locked);
-  if (!lockedEntry) return;
+  if (!lockedEntry) {
+    showDesktopFeedback("没有加锁日记");
+    return;
+  }
   lockedEntry.locked = false;
+  lockedEntry.updatedAt = Date.now();
   persistEntries();
   activeEntryId = lockedEntry.id;
   switchView("write");
-  loadEntry(lockedEntry.id);
+  refreshAll();
 });
 
 textArea.addEventListener("input", () => {
   updateActiveEntry({ text: textArea.value });
   updateWordCount();
   saveLocalDraft();
-  scheduleCloudUpload();
 });
 
 newEntryButton.addEventListener("click", createEntry);
@@ -570,18 +853,19 @@ manualSyncButton.addEventListener("click", () => {
   autoSyncEnabled = !autoSyncEnabled;
   storage.set("chaomu-windows-auto-sync", autoSyncEnabled);
   if (autoSyncEnabled) {
-    uploadToGoogleDrive();
+    pushSharedState();
   } else {
     refreshSyncStatus();
   }
 });
 
-window.addEventListener("online", scheduleCloudUpload);
+imageUploadInput.addEventListener("change", (event) => uploadImages(event.target.files));
+voiceUploadInput.addEventListener("change", (event) => uploadVoice(event.target.files));
+
+window.addEventListener("online", () => scheduleSharedPush());
 window.addEventListener("offline", refreshSyncStatus);
 
-renderCalendar();
-renderMoodMap();
-renderEntryList();
-loadEntry(activeEntryId || entries[0].id);
+persistEntries(false);
+refreshAll();
 pullSharedState(true);
 window.setInterval(() => pullSharedState(false), POLL_INTERVAL);
