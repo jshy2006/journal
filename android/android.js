@@ -26,6 +26,8 @@ const voiceUploadInput = document.querySelector("#mobileVoiceUpload");
 const photoStrip = document.querySelector("#photoStrip");
 const photoCount = document.querySelector("#photoCount");
 const mobileMoodButtons = document.querySelectorAll("#mobileMoods button");
+const timelineCount = document.querySelector("#timelineCount");
+const mobileCalendarSummary = document.querySelector("#mobileCalendarSummary");
 const profileEntryCount = document.querySelector("#profileEntryCount");
 const profileImageCount = document.querySelector("#profileImageCount");
 const profilePrivateCount = document.querySelector("#profilePrivateCount");
@@ -359,6 +361,8 @@ function setToolPanel(type) {
 }
 
 function renderTimeline() {
+  timelineCount.textContent = `${entries.length} 天`;
+
   if (!entries.length) {
     timelineList.innerHTML = `
       <article class="active">
@@ -413,6 +417,7 @@ function loadReader(index) {
 function renderCalendar() {
   const daysWithEntries = new Set(entries.map((entry) => entryDateObject(entry).getDate()));
   const today = new Date().getDate();
+  mobileCalendarSummary.textContent = `${daysWithEntries.size} / 31`;
   calendarGrid.innerHTML = Array.from({ length: 31 }, (_, index) => {
     const day = index + 1;
     const classes = `${daysWithEntries.has(day) ? "marked" : ""} ${day === today ? "active" : ""}`.trim();
