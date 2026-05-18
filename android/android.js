@@ -1,5 +1,6 @@
 const SEEDED_ENTRY_IDS = new Set(["entry-rain", "entry-room", "entry-future"]);
-const SEEDED_ASSET_MARKER = "../assets/illustrations/";
+const SEEDED_ASSET_MARKER = "../assets/";
+const FALLBACK_IMAGE = "../assets/chaomu-logo.svg";
 const SYNC_ENDPOINT = "/api/state";
 const POLL_INTERVAL = 1600;
 
@@ -397,7 +398,7 @@ function loadReader(index) {
     readerTitle.textContent = "还没有日记";
     readerDate.textContent = "暂无记录";
     readerText.textContent = "新建一篇日记后，这里会显示正文。";
-    readerCard.querySelector("img").src = "../assets/illustrations/diary-desk.png";
+    readerCard.querySelector("img").src = FALLBACK_IMAGE;
     return;
   }
 
@@ -409,7 +410,7 @@ function loadReader(index) {
   readerTitle.textContent = entry.title;
   readerDate.textContent = entry.date || "未记录时间";
   readerText.textContent = entry.locked ? "这篇日记已加锁。" : entry.text || "还没有写下内容。";
-  readerCard.querySelector("img").src = entry.image || entry.images[0]?.dataUrl || "../assets/illustrations/diary-desk.png";
+  readerCard.querySelector("img").src = entry.image || entry.images[0]?.dataUrl || FALLBACK_IMAGE;
   readerCard.querySelector("img").alt = entry.title;
   loadEditor();
 }

@@ -1,5 +1,6 @@
 const SEEDED_ENTRY_IDS = new Set(["entry-rain", "entry-room", "entry-future"]);
-const SEEDED_ASSET_MARKER = "../assets/illustrations/";
+const SEEDED_ASSET_MARKER = "../assets/";
+const FALLBACK_IMAGE = "../assets/chaomu-logo.svg";
 const SYNC_ENDPOINT = "/api/state";
 const POLL_INTERVAL = 1600;
 const MOODS = [
@@ -395,7 +396,7 @@ function renderAttachments(entry) {
 }
 
 function renderVisual(entry) {
-  const image = entry?.image || entry?.images?.[0]?.dataUrl || "../assets/illustrations/diary-desk.png";
+  const image = entry?.image || entry?.images?.[0]?.dataUrl || FALLBACK_IMAGE;
   entryImagePreview.src = image;
   entryImagePreview.alt = entry?.title || "日记图片预览";
   entryImageLabel.textContent = entry ? "日记图片" : "日记图片";
@@ -640,7 +641,7 @@ function renderDayReview(entry, day) {
   dayReview.querySelector("p").textContent = entry
     ? (entry.locked ? "这篇日记已加锁。" : getNote(entry.text))
     : "这一天还没有记录，可以从今日书写补一篇。";
-  dayReview.querySelector("img").src = entry?.image || entry?.images?.[0]?.dataUrl || "../assets/illustrations/diary-desk.png";
+  dayReview.querySelector("img").src = entry?.image || entry?.images?.[0]?.dataUrl || FALLBACK_IMAGE;
   dayReview.querySelector(".tag-row").innerHTML = entry?.tags?.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("") || "";
 }
 
