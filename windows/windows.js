@@ -59,9 +59,6 @@ const moodMap = document.querySelector("#moodMap");
 const moodFilters = document.querySelectorAll(".mood-filter");
 const moodSummaryPill = document.querySelector("#moodSummaryPill");
 const moodSummaryText = document.querySelector("#moodSummaryText");
-const unlockButton = document.querySelector("#unlockButton");
-const privateList = document.querySelector("#privateList");
-const privateSummary = document.querySelector("#privateSummary");
 const imageUploadInput = document.querySelector("#imageUploadInput");
 const voiceUploadInput = document.querySelector("#voiceUploadInput");
 const attachmentRow = document.querySelector("#attachmentRow");
@@ -70,7 +67,7 @@ const entryImageLabel = document.querySelector("#entryImageLabel");
 const entryImageText = document.querySelector("#entryImageText");
 const statEntries = document.querySelector("#statEntries");
 const statImages = document.querySelector("#statImages");
-const statPrivate = document.querySelector("#statPrivate");
+const statMoods = document.querySelector("#statMoods");
 const statPlaces = document.querySelector("#statPlaces");
 
 let deletedEntryIds = new Set(storage.get("chaomu-shared-deleted-entry-ids-v1", []));
@@ -140,8 +137,7 @@ function normalizeEntries(items) {
         images,
         voice: normalizeAttachment(entry.voice),
         updatedAt: Number(entry.updatedAt || 0),
-        syncedAt: Number(entry.syncedAt || 0),
-        locked: Boolean(entry.locked)
+        syncedAt: Number(entry.syncedAt || 0)
       };
     });
 }
@@ -330,7 +326,7 @@ function renderEntryList() {
   }
 
   entryList.innerHTML = visibleEntries.map((entry) => {
-    const preview = entry.locked ? "这篇日记已加锁。" : getNote(entry.text);
+    const preview = getNote(entry.text);
     const tags = entry.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("");
     const activeClass = entry.id === activeEntryId ? " active" : "";
 
@@ -367,12 +363,12 @@ function syncMoodButtons(entry) {
 
 function setEditorControls(entry) {
   const hasEntry = Boolean(entry);
-  textArea.disabled = !hasEntry || entry.locked;
+  textArea.disabled = !hasEntry;
   moodButtons.forEach((button) => {
-    button.disabled = !hasEntry || entry.locked;
+    button.disabled = !hasEntry;
   });
   toolButtons.forEach((button) => {
-    button.disabled = !hasEntry || (entry.locked && button.title !== "删除日记");
+    button.disabled = !hasEntry;
   });
 }
 
@@ -388,9 +384,6 @@ function renderAttachments(entry) {
   }
   if (entry.voice) {
     chips.push(`<span class="attachment-pill">语音 ${escapeHtml(entry.voice.name)}</span>`);
-  }
-  if (entry.locked) {
-    chips.push(`<span class="attachment-pill danger">已加锁</span>`);
   }
   attachmentRow.innerHTML = chips.join("");
 }
@@ -437,12 +430,12 @@ function loadEntry(id) {
   mood.textContent = entry.mood;
   weather.textContent = entry.weather;
   place.textContent = entry.place;
-  textArea.value = entry.locked ? "这篇日记已加锁。可在私密匣中解锁查看。" : entry.text;
+  textArea.value = entry.text;
   textArea.placeholder = "写下今天。";
   editorTags.innerHTML = entry.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("");
   syncMoodButtons(entry);
   updateWordCount();
-  saveStatus.textContent = entry.locked ? "已加锁" : "本地已保存";
+  saveStatus.textContent = "本地已保存";
   setEditorControls(entry);
   renderAttachments(entry);
   renderVisual(entry);
@@ -453,7 +446,7 @@ function loadEntry(id) {
 
 function updateActiveEntry(patch) {
   const entry = getActiveEntry();
-  if (!entry || entry.locked) return;
+  if (!entry) return;
 
   Object.assign(entry, patch, {
     updatedAt: Date.now(),
@@ -474,7 +467,6 @@ function updateActiveEntry(patch) {
   renderEntryList();
   renderCalendar();
   renderMoodMap();
-  renderPrivateList();
   refreshStats();
   refreshSyncStatus();
 }
@@ -489,8 +481,8 @@ function saveLocalDraft() {
 
 function insertAtCursor(snippet) {
   const entry = getActiveEntry();
-  if (!entry || entry.locked) {
-    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
+  if (!entry) {
+    showDesktopFeedback("请先新建日记");
     return;
   }
 
@@ -523,8 +515,8 @@ function readFileAsDataUrl(file) {
 
 async function uploadImages(fileList) {
   const entry = getActiveEntry();
-  if (!entry || entry.locked) {
-    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
+  if (!entry) {
+    showDesktopFeedback("请先新建日记");
     return;
   }
 
@@ -547,8 +539,8 @@ async function uploadImages(fileList) {
 
 async function uploadVoice(fileList) {
   const entry = getActiveEntry();
-  if (!entry || entry.locked) {
-    showDesktopFeedback(entry ? "请先解锁" : "请先新建日记");
+  if (!entry) {
+    showDesktopFeedback("请先新建日记");
     return;
   }
 
@@ -565,17 +557,6 @@ async function uploadVoice(fileList) {
   } finally {
     voiceUploadInput.value = "";
   }
-}
-
-function lockActiveEntry() {
-  const entry = getActiveEntry();
-  if (!entry) return;
-  entry.locked = true;
-  entry.updatedAt = Date.now();
-  persistEntries();
-  loadEntry(entry.id);
-  renderPrivateList();
-  refreshStats();
 }
 
 function deleteActiveEntry() {
@@ -613,8 +594,7 @@ function createEntry() {
     images: [],
     voice: null,
     updatedAt: now,
-    syncedAt: 0,
-    locked: false
+    syncedAt: 0
   };
 
   entries.unshift(entry);
@@ -639,7 +619,7 @@ function renderDayReview(entry, day) {
   dayReview.querySelector("span").textContent = `5月${day}日`;
   dayReview.querySelector("h2").textContent = entry ? entry.title : "还没有日记";
   dayReview.querySelector("p").textContent = entry
-    ? (entry.locked ? "这篇日记已加锁。" : getNote(entry.text))
+    ? getNote(entry.text)
     : "这一天还没有记录，可以从今日书写补一篇。";
   dayReview.querySelector("img").src = entry?.image || entry?.images?.[0]?.dataUrl || FALLBACK_IMAGE;
   dayReview.querySelector(".tag-row").innerHTML = entry?.tags?.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("") || "";
@@ -708,45 +688,14 @@ function renderMoodMap() {
     : "写下日记并选择心情后，这里会汇总情绪分布。";
 }
 
-function renderPrivateList() {
-  const lockedEntries = entries.filter((entry) => entry.locked);
-  privateSummary.textContent = `${lockedEntries.length} 篇`;
-
-  if (!lockedEntries.length) {
-    privateList.innerHTML = `<div class="empty-list">还没有加锁日记</div>`;
-    return;
-  }
-
-  privateList.innerHTML = lockedEntries.map((entry) => `
-    <article>
-      <span>${escapeHtml(entry.date || "未记录时间")}</span>
-      <strong>${escapeHtml(entry.title)}</strong>
-      <button class="private-action" data-entry-id="${escapeHtml(entry.id)}" type="button">解锁</button>
-    </article>
-  `).join("");
-
-  privateList.querySelectorAll(".private-action").forEach((button) => {
-    button.addEventListener("click", () => {
-      const entry = entries.find((item) => item.id === button.dataset.entryId);
-      if (!entry) return;
-      entry.locked = false;
-      entry.updatedAt = Date.now();
-      activeEntryId = entry.id;
-      persistEntries();
-      switchView("write");
-      refreshAll();
-    });
-  });
-}
-
 function refreshStats() {
   const imageCount = entries.reduce((total, entry) => total + entry.images.length, 0);
-  const lockedCount = entries.filter((entry) => entry.locked).length;
+  const moodTypes = new Set(entries.map((entry) => entry.moodClass).filter(Boolean));
   const places = new Set(entries.map((entry) => entry.place).filter((value) => value && value !== "未填写"));
 
   statEntries.textContent = String(entries.length);
   statImages.textContent = String(imageCount);
-  statPrivate.textContent = String(lockedCount);
+  statMoods.textContent = String(moodTypes.size);
   statPlaces.textContent = String(places.size);
 }
 
@@ -755,14 +704,13 @@ function refreshAll() {
   loadEntry(activeEntryId || entries[0]?.id || "");
   renderCalendar();
   renderMoodMap();
-  renderPrivateList();
   refreshStats();
 }
 
 moodButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const entry = getActiveEntry();
-    if (!entry || entry.locked) return;
+    if (!entry) return;
 
     const moodClass = ["calm", "bright", "warm", "low"].find((name) => button.classList.contains(name)) || "calm";
     moodButtons.forEach((item) => item.classList.toggle("active", item === button));
@@ -793,7 +741,6 @@ toolButtons.forEach((button) => {
     if (action === "引用") insertAtCursor("\n> 今天想记住的一句话\n");
     if (action === "上传图片") imageUploadInput.click();
     if (action === "上传语音") voiceUploadInput.click();
-    if (action === "锁定") lockActiveEntry();
     if (action === "删除日记") deleteActiveEntry();
   });
 });
@@ -820,20 +767,6 @@ moodFilters.forEach((button) => {
       item.style.opacity = item.classList.contains(button.dataset.mood) ? "1" : "0.35";
     });
   });
-});
-
-unlockButton.addEventListener("click", () => {
-  const lockedEntry = entries.find((entry) => entry.locked);
-  if (!lockedEntry) {
-    showDesktopFeedback("没有加锁日记");
-    return;
-  }
-  lockedEntry.locked = false;
-  lockedEntry.updatedAt = Date.now();
-  persistEntries();
-  activeEntryId = lockedEntry.id;
-  switchView("write");
-  refreshAll();
 });
 
 textArea.addEventListener("input", () => {

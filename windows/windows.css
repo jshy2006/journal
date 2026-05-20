@@ -144,8 +144,7 @@ button {
 .editor-foot,
 .section-title span,
 .visual-copy span,
-.day-review span,
-.private-list span {
+.day-review span {
   color: var(--muted);
   font-size: 12px;
 }
@@ -941,12 +940,18 @@ p {
   font-size: 32px;
 }
 
-.calendar-layout,
-.mood-layout,
-.private-layout {
+.summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.review-layout {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) 360px;
+  grid-template-columns: minmax(460px, 1.2fr) minmax(320px, 0.8fr);
   gap: 16px;
+  align-items: start;
 }
 
 .panel {
@@ -1005,6 +1010,10 @@ p {
   background: linear-gradient(180deg, var(--green-soft), #fff5d9);
 }
 
+.mood-panel .section-title {
+  margin-bottom: 14px;
+}
+
 .day-review img,
 .mood-summary img {
   display: block;
@@ -1017,14 +1026,12 @@ p {
 }
 
 .day-review h2,
-.mood-summary h2,
-.lock-panel h2 {
+.mood-summary h2 {
   margin-bottom: 8px;
 }
 
 .day-review p,
-.mood-summary p,
-.lock-panel p {
+.mood-summary p {
   color: var(--muted);
   line-height: 1.7;
 }
@@ -1080,62 +1087,6 @@ p {
   border-radius: 50%;
 }
 
-.lock-panel {
-  display: grid;
-  align-content: center;
-  justify-items: start;
-  min-height: 460px;
-}
-
-.lock-badge {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  margin-bottom: 18px;
-  border-radius: 8px;
-  color: var(--green);
-  background: linear-gradient(180deg, var(--green-soft), #f8edcf);
-}
-
-.primary-button {
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid var(--green);
-  border-radius: 8px;
-  color: #fff;
-  background: linear-gradient(180deg, var(--green), #48685b);
-}
-
-.private-list {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-}
-
-.private-list article {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 12px;
-  min-height: 72px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fffdf8;
-}
-
-.private-list span {
-  grid-column: 1 / -1;
-}
-
-.private-action {
-  min-width: 72px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--green);
-  background: var(--green-soft);
-}
-
 @media (max-width: 1220px) {
   body {
     min-width: 900px;
@@ -1149,9 +1100,7 @@ p {
     display: none;
   }
 
-  .calendar-layout,
-  .mood-layout,
-  .private-layout {
+  .review-layout {
     grid-template-columns: 1fr;
   }
 }

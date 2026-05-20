@@ -56,15 +56,7 @@
             </button>
             <button class="side-nav-item" data-view="calendar" type="button">
               <svg class="icon" aria-hidden="true"><use href="#icon-calendar"></use></svg>
-              日历回顾
-            </button>
-            <button class="side-nav-item" data-view="mood" type="button">
-              <svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg>
-              情绪地图
-            </button>
-            <button class="side-nav-item" data-view="private" type="button">
-              <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
-              私密匣
+              回顾地图
             </button>
           </nav>
 
@@ -135,8 +127,7 @@
                   <button class="tool-button" type="button" title="引用"><svg class="icon" aria-hidden="true"><use href="#icon-quote"></use></svg></button>
                   <button class="tool-button" type="button" title="上传图片"><svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg></button>
                   <button class="tool-button" type="button" title="上传语音"><svg class="icon" aria-hidden="true"><use href="#icon-mic"></use></svg></button>
-                  <button class="tool-button right" type="button" title="锁定"><svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg></button>
-                  <button id="deleteEntryButton" class="tool-button danger" type="button" title="删除日记"><svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg></button>
+                  <button id="deleteEntryButton" class="tool-button danger right" type="button" title="删除日记"><svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg></button>
                 </div>
                 <input id="imageUploadInput" class="file-input" type="file" accept="image/*" multiple>
                 <input id="voiceUploadInput" class="file-input" type="file" accept="audio/*">
@@ -164,7 +155,7 @@
                   <div class="stat-grid">
                     <div><strong id="statEntries">0</strong><span>记录篇数</span></div>
                     <div><strong id="statImages">0</strong><span>图片</span></div>
-                    <div><strong id="statPrivate">0</strong><span>私密篇</span></div>
+                    <div><strong id="statMoods">0</strong><span>情绪</span></div>
                     <div><strong id="statPlaces">0</strong><span>地点</span></div>
                   </div>
                 </section>
@@ -184,14 +175,17 @@
           <section id="calendarView" class="workspace-view page-view" data-view="calendar">
             <div class="page-head">
               <div>
-                <span class="eyebrow">日历回顾</span>
-                <h1>五月记录</h1>
+                <span class="eyebrow">日历与情绪</span>
+                <h1>五月回顾</h1>
               </div>
+              <div class="summary-pills">
                 <span class="soft-pill" id="calendarSummary">0 / 31 天</span>
+                <span class="soft-pill" id="moodSummaryPill">暂无情绪</span>
+              </div>
             </div>
 
-            <div class="calendar-layout">
-              <section class="panel">
+            <div class="review-layout">
+              <section class="panel calendar-panel">
                 <div class="calendar-grid" id="calendarGrid"></div>
               </section>
               <section class="panel day-review" id="dayReview">
@@ -201,20 +195,9 @@
                 <p>新建一篇日记后，这里会显示当天回顾。</p>
                 <div class="tag-row"></div>
               </section>
-            </div>
-          </section>
 
-          <section id="moodView" class="workspace-view page-view" data-view="mood">
-            <div class="page-head">
-              <div>
-                <span class="eyebrow">情绪地图</span>
-                <h1>本月情绪分布</h1>
-              </div>
-              <span class="soft-pill" id="moodSummaryPill">暂无情绪</span>
-            </div>
-
-            <div class="mood-layout">
-              <section class="panel">
+              <section class="panel mood-panel">
+                <div class="section-title"><h2>情绪地图</h2></div>
                 <div class="mood-map" id="moodMap"></div>
               </section>
               <section class="panel mood-summary">
@@ -230,31 +213,6 @@
               </section>
             </div>
           </section>
-
-          <section id="privateView" class="workspace-view page-view" data-view="private">
-            <div class="page-head">
-              <div>
-                <span class="eyebrow">私密匣</span>
-                <h1>加锁日记</h1>
-              </div>
-              <span class="soft-pill" id="privateSummary">0 篇</span>
-            </div>
-
-            <div class="private-layout">
-              <section class="panel lock-panel">
-                <div class="lock-badge">
-                  <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
-                </div>
-                <h2>私密内容已锁定</h2>
-                <p>加锁的日记会在本机隐藏正文，云端只保存加密内容。</p>
-                <button id="unlockButton" class="primary-button" type="button">解锁查看</button>
-              </section>
-
-              <section class="panel private-list" id="privateList">
-                <div class="empty-list">还没有加锁日记</div>
-              </section>
-            </div>
-          </section>
         </section>
       </div>
     </main>
@@ -266,7 +224,6 @@
     <symbol id="icon-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z"></path></symbol>
     <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path></symbol>
     <symbol id="icon-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"></path></symbol>
-    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"></path></symbol>
     <symbol id="icon-quote" viewBox="0 0 24 24"><path d="M9 7H5v6h4v4l3-4V7ZM19 7h-4v6h4v4l3-4V7Z"></path></symbol>
